@@ -60,7 +60,7 @@ function makeGlyph(r, a, t, holeR, ch) {
     incline: 0,
     w: (0.22 + Math.random() * 0.16) * Math.pow((holeR * 1.7) / r, 1.35),
     fall: 6 + Math.random() * 18 * (0.35 + t),
-    size: 11 + (1 - t) * 17 + (ch.length > 1 ? 4 : 0),
+    size: 14 + (1 - t) * 20 + (ch.length > 1 ? 5 : 0),
     phase: Math.random() * Math.PI * 2,
   };
 }
@@ -124,7 +124,7 @@ export function createGlyphs(world) {
         const r = Math.round(232 + 23 * gold);
         const gg = Math.round(214 - 70 * gold);
         const b = Math.round(196 - 120 * gold);
-        const alpha = (far ? 0.38 : 0.78) * fade * twinkle;
+        const alpha = (far ? 0.5 : 0.9) * fade * twinkle;
         if (alpha < 0.03) return;
 
         const size = g.size * (0.7 + closeness * 0.55);

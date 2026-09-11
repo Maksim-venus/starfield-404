@@ -50,13 +50,50 @@ export function createBlackHole(world) {
   const count = world.mobile ? 420 : 980;
   const particles = spawnDisk(count, 1.42, 4.9, 0x504040);
 
-  const paint = (ctx, time, side) => {
+  const paintBody = (ctx, side) => {
     const { cx, cy, holeR } = world;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(ROLL);
+    ctx.beginPath();
+    if (side === "far") ctx.rect(-holeR * 8, -holeR * 8, holeR * 16, holeR * 8.15);
+    else ctx.rect(-holeR * 8, -holeR * 0.15, holeR * 16, holeR * 8);
+    ctx.clip();
+    ctx.scale(1, FLATTEN);
+    ctx.globalCompositeOperation = "screen";
+
+    const band = ctx.createRadialGradient(0, 0, holeR * 1.32, 0, 0, holeR * 4.7);
+    band.addColorStop(0, "rgba(255, 230, 180, 0)");
+    band.addColorStop(0.07, "rgba(255, 208, 130, 0.5)");
+    band.addColorStop(0.2, "rgba(232, 118, 42, 0.32)");
+    band.addColorStop(0.48, "rgba(132, 52, 168, 0.16)");
+    band.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = band;
+    ctx.beginPath();
+    ctx.arc(0, 0, holeR * 4.7, 0, Math.PI * 2);
+    ctx.arc(0, 0, holeR * 1.32, 0, Math.PI * 2, true);
+    ctx.fill();
+
+    const hot = ctx.createRadialGradient(-holeR * 2.15, 0, 0, -holeR * 1.6, 0, holeR * 2.8);
+    hot.addColorStop(0, "rgba(255, 246, 214, 0.5)");
+    hot.addColorStop(0.35, "rgba(255, 158, 64, 0.2)");
+    hot.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = hot;
+    ctx.beginPath();
+    ctx.arc(0, 0, holeR * 4.4, 0, Math.PI * 2);
+    ctx.arc(0, 0, holeR * 1.32, 0, Math.PI * 2, true);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const paint = (ctx, time, side) => {
+    const { cx, cy, holeR, reduced } = world;
+    paintBody(ctx, side);
     ctx.save();
     ctx.translate(cx, cy);
     ctx.globalCompositeOperation = "screen";
 
-      for (const p of particles) {
+    for (const p of particles) {
       const { sx, sy, depth } = project(p.r * holeR, p.a);
       const far = depth < 0;
       if (side === "far" && !far) continue;
