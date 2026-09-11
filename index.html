@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#05040a" />
     <meta name="color-scheme" content="dark" />
-    <title>404 at the event horizon</title>
+    <title>Event Horizon · 404</title>
     <meta
       name="description"
-      content="A typographic web-art 404: a starfield, a black hole, and a continuous fall of the letter w."
+      content="A gravity-sandbox 404: black hole, starfield, and typographic w particles in inspiral."
     />
-    <meta property="og:title" content="404 at the event horizon" />
+    <meta property="og:title" content="Event Horizon · 404" />
     <meta
       property="og:description"
-      content="www is a path. wwwww is a well. A starry 404 at the edge of the web."
+      content="Simulation view: a black hole accreting a stream of w glyphs. Path not found."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
@@ -25,24 +25,62 @@
     <div class="vignette" aria-hidden="true"></div>
     <div class="grain" aria-hidden="true"></div>
 
-    <main class="hud">
-      <p class="code">404</p>
-      <h1>lost in the wwwww</h1>
-      <p class="lede">
-        <span>www is a path.</span>
-        <span>wwwww is a well.</span>
-      </p>
-      <p class="note">You followed too many w’s. The rest are still falling.</p>
-    </main>
+    <header class="topbar">
+      <div class="chip chip-run">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="sim-state">SIM · RUNNING</span>
+      </div>
+      <div class="chip">TIMEWARP <b id="sim-warp">×1.0</b></div>
+      <div class="chip">ZOOM <b id="sim-zoom">1.00×</b></div>
+      <div class="chip mono" id="sim-clock">T+00:00:00.0</div>
+      <div class="chip chip-err">404 · NOT FOUND</div>
+    </header>
 
-    <footer class="colophon">
-      <p class="brand">wwwww</p>
+    <aside class="panel" aria-label="Selected object">
+      <header class="panel-head">
+        <span class="kicker">Selected object</span>
+        <h1>Event Horizon</h1>
+        <p class="subtype">Kerr black hole · accretion disc</p>
+      </header>
+      <dl class="stats">
+        <div>
+          <dt>Mass</dt>
+          <dd>1.42×10<sup>8</sup> M☉</dd>
+        </div>
+        <div>
+          <dt>Schwarzschild r</dt>
+          <dd>4.19 AU</dd>
+        </div>
+        <div>
+          <dt>Accretion</dt>
+          <dd id="stat-acc">2.64e−6 M☉/yr</dd>
+        </div>
+        <div>
+          <dt>In freefall</dt>
+          <dd id="stat-fall">000 w</dd>
+        </div>
+        <div>
+          <dt>Coordinate t</dt>
+          <dd id="stat-t">0.00e3 s</dd>
+        </div>
+        <div>
+          <dt>Spin a*</dt>
+          <dd>0.937</dd>
+        </div>
+      </dl>
+      <p class="panel-note">Route missing. Bound glyphs remain in inspiral.</p>
+    </aside>
+
+    <footer class="hotbar">
+      <div class="hot-keys">
+        <span><kbd>DRAG</kbd> perturb</span>
+        <span><kbd>SCROLL</kbd> zoom</span>
+      </div>
       <p class="contact">
         To reach me, email
         <a href="mailto:root@wwwww.us">root@wwwww.us</a>
       </p>
     </footer>
-    <p class="hint">drag the dark</p>
 
     <script type="module" src="/src/main.js"></script>
   </body>

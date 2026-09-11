@@ -23,14 +23,14 @@ function spawnGlyphs(world) {
       const t = i / (perArm - 1);
       const spiral = inner + (outer - inner) * Math.pow(t, 0.78);
       const a = t * Math.PI * 3.4 + arm * ((Math.PI * 2) / arms);
-      glyphs.push(makeGlyph(spiral, a, t, holeR, "w"));
+      glyphs.push(makeGlyph(spiral, a, t, holeR, "w", i % 5 === 0));
     }
   }
 
   const halo = world.mobile ? 18 : 28;
   for (let i = 0; i < halo; i++) {
     const a = (i / halo) * Math.PI * 2;
-    glyphs.push(makeGlyph(holeR * 2.15, a, 0.35, holeR, i % 7 === 0 ? "www" : "w"));
+    glyphs.push(makeGlyph(holeR * 2.15, a, 0.35, holeR, i % 7 === 0 ? "www" : "w", i % 3 === 0));
   }
 
   const scatter = world.mobile ? 16 : 30;
@@ -43,6 +43,7 @@ function spawnGlyphs(world) {
         t,
         holeR,
         i % 11 === 0 ? "ww" : "w",
+        i % 4 === 0,
       ),
     );
     glyphs[glyphs.length - 1].incline = (Math.random() - 0.5) * 0.9;
@@ -51,7 +52,7 @@ function spawnGlyphs(world) {
   return glyphs;
 }
 
-function makeGlyph(r, a, t, holeR, ch) {
+function makeGlyph(r, a, t, holeR, ch, tracked) {
   return {
     r,
     a,
@@ -60,8 +61,10 @@ function makeGlyph(r, a, t, holeR, ch) {
     incline: 0,
     w: (0.22 + Math.random() * 0.16) * Math.pow((holeR * 1.7) / r, 1.35),
     fall: 6 + Math.random() * 18 * (0.35 + t),
-    size: 14 + (1 - t) * 20 + (ch.length > 1 ? 5 : 0),
+    size: 13 + (1 - t) * 16 + (ch.length > 1 ? 4 : 0),
     phase: Math.random() * Math.PI * 2,
+    trail: tracked ? [] : null,
+    vector: tracked,
   };
 }
 
@@ -76,32 +79,66 @@ export function createGlyphs(world) {
   };
 
   return {
+    count() {
+      return glyphs.length;
+    },
+
     update(dt, pointer) {
-      const { cx, cy, holeR } = world;
+      const { cx, cy, holeR, zoom } = world;
       const outer = holeR * 7.4;
       const tug = pointer.down ? 2.1 : 1;
+      const z = zoom || 1;
+      const wx = cx + (pointer.px - cx) / z;
+      const wy = cy + (pointer.py - cy) / z;
 
       each((g, sx, sy) => {
         g.a += g.w * dt * (pointer.down ? 1.45 : 1);
         g.r -= g.fall * dt * 0.35 * tug;
 
         if (pointer.active) {
-          const dx = pointer.px - (cx + sx);
-          const dy = pointer.py - (cy + sy);
+          const dx = wx - (cx + sx);
+          const dy = wy - (cy + sy);
           const dist = Math.hypot(dx, dy);
-          if (dist < 200) {
-            const k = 1 - dist / 200;
+          if (dist < 200 / z) {
+            const k = 1 - dist / (200 / z);
             g.r -= k * 36 * dt * (pointer.down ? 1.8 : 1);
             g.a += k * 0.55 * dt;
           }
+        }
+
+        if (g.trail) {
+          g.trail.push({ x: sx, y: sy });
+          if (g.trail.length > 16) g.trail.shift();
         }
 
         if (g.r < holeR * 1.04) {
           g.r = outer * (0.72 + Math.random() * 0.34);
           g.a = Math.random() * Math.PI * 2;
           g.ch = Math.random() > 0.9 ? "www" : "w";
+          if (g.trail) g.trail.length = 0;
         }
       });
+    },
+
+    drawTrails(ctx) {
+      if (world.reduced) return;
+      const { cx, cy } = world;
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.lineJoin = "round";
+      each((g) => {
+        if (!g.trail || g.trail.length < 2) return;
+        ctx.beginPath();
+        g.trail.forEach((p, i) => {
+          const x = cx + p.x;
+          const y = cy + p.y;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = "rgba(143, 212, 255, 0.22)";
+        ctx.stroke();
+      });
+      ctx.restore();
     },
 
     draw(ctx, time, _pointer, side) {
@@ -127,17 +164,25 @@ export function createGlyphs(world) {
         const alpha = (far ? 0.5 : 0.9) * fade * twinkle;
         if (alpha < 0.03) return;
 
+        if (g.vector && !far && !reduced) {
+          const len = 10 + closeness * 14;
+          const vx = -Math.sin(g.a) * len;
+          const vy = Math.cos(g.a) * FLATTEN * len;
+          ctx.strokeStyle = `rgba(143, 212, 255, ${0.28 * fade})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + vx, y + vy);
+          ctx.stroke();
+        }
+
         const size = g.size * (0.7 + closeness * 0.55);
-        const stretch = 1 + closeness * 1.35;
+        const stretch = 1 + closeness * 1.15;
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(g.a * 0.35 + depth * 0.0004);
+        ctx.rotate(g.a * 0.2);
         ctx.scale(stretch, 1 / Math.sqrt(stretch));
-        ctx.font = `italic ${size}px "Cormorant Garamond", Georgia, "Times New Roman", serif`;
-        if (!far && closeness > 0.45) {
-          ctx.shadowColor = `rgba(255, 180, 90, ${0.35 * closeness})`;
-          ctx.shadowBlur = 14 * closeness;
-        }
+        ctx.font = `400 ${size}px Outfit, "Segoe UI", sans-serif`;
         ctx.fillStyle = `rgba(${r},${gg},${b},${alpha})`;
         ctx.fillText(g.ch, 0, 0);
         ctx.restore();
