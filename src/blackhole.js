@@ -51,18 +51,19 @@ export function createBlackHole(world) {
   const particles = spawnDisk(count, 1.42, 4.9, 0x504040);
 
   const paintBody = (ctx, side) => {
-    const { cx, cy, holeR } = world;
+    const { cx, cy, holeR, zoom } = world;
+    const R = holeR * zoom;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(ROLL);
     ctx.beginPath();
-    if (side === "far") ctx.rect(-holeR * 8, -holeR * 8, holeR * 16, holeR * 8.15);
-    else ctx.rect(-holeR * 8, -holeR * 0.15, holeR * 16, holeR * 8);
+    if (side === "far") ctx.rect(-R * 8, -R * 8, R * 16, R * 8.15);
+    else ctx.rect(-R * 8, -R * 0.15, R * 16, R * 8);
     ctx.clip();
     ctx.scale(1, FLATTEN);
     ctx.globalCompositeOperation = "screen";
 
-    const band = ctx.createRadialGradient(0, 0, holeR * 1.32, 0, 0, holeR * 4.7);
+    const band = ctx.createRadialGradient(0, 0, R * 1.32, 0, 0, R * 4.7);
     band.addColorStop(0, "rgba(255, 230, 180, 0)");
     band.addColorStop(0.07, "rgba(255, 208, 130, 0.5)");
     band.addColorStop(0.2, "rgba(232, 118, 42, 0.32)");
@@ -70,31 +71,32 @@ export function createBlackHole(world) {
     band.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = band;
     ctx.beginPath();
-    ctx.arc(0, 0, holeR * 4.7, 0, Math.PI * 2);
-    ctx.arc(0, 0, holeR * 1.32, 0, Math.PI * 2, true);
+    ctx.arc(0, 0, R * 4.7, 0, Math.PI * 2);
+    ctx.arc(0, 0, R * 1.32, 0, Math.PI * 2, true);
     ctx.fill();
 
-    const hot = ctx.createRadialGradient(-holeR * 2.15, 0, 0, -holeR * 1.6, 0, holeR * 2.8);
+    const hot = ctx.createRadialGradient(-R * 2.15, 0, 0, -R * 1.6, 0, R * 2.8);
     hot.addColorStop(0, "rgba(255, 246, 214, 0.5)");
     hot.addColorStop(0.35, "rgba(255, 158, 64, 0.2)");
     hot.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = hot;
     ctx.beginPath();
-    ctx.arc(0, 0, holeR * 4.4, 0, Math.PI * 2);
-    ctx.arc(0, 0, holeR * 1.32, 0, Math.PI * 2, true);
+    ctx.arc(0, 0, R * 4.4, 0, Math.PI * 2);
+    ctx.arc(0, 0, R * 1.32, 0, Math.PI * 2, true);
     ctx.fill();
     ctx.restore();
   };
 
   const paint = (ctx, time, side) => {
-    const { cx, cy, holeR, reduced } = world;
+    const { cx, cy, holeR, reduced, zoom } = world;
+    const R = holeR * zoom;
     paintBody(ctx, side);
     ctx.save();
     ctx.translate(cx, cy);
     ctx.globalCompositeOperation = "screen";
 
     for (const p of particles) {
-      const { sx, sy, depth } = project(p.r * holeR, p.a);
+      const { sx, sy, depth } = project(p.r * R, p.a);
       const far = depth < 0;
       if (side === "far" && !far) continue;
       if (side === "near" && far) continue;
@@ -104,17 +106,17 @@ export function createBlackHole(world) {
       const alpha = (p.spark ? 0.95 : 0.55) * pulse;
       ctx.fillStyle = diskFill(p.heat, approach, alpha);
       ctx.beginPath();
-      ctx.arc(sx, sy, p.size * (0.7 + 0.55 * approach), 0, Math.PI * 2);
+      ctx.arc(sx, sy, p.size * zoom * (0.7 + 0.55 * approach), 0, Math.PI * 2);
       ctx.fill();
 
-      if (far && Math.hypot(sx, sy) < holeR * 1.7 && sy < holeR * 0.22) {
+      if (far && Math.hypot(sx, sy) < R * 1.7 && sy < R * 0.22) {
         const ang = Math.atan2(sy, sx);
-        const ring = holeR * (1.06 + 0.1 * p.heat);
+        const ring = R * (1.06 + 0.1 * p.heat);
         const lx = Math.cos(ang) * ring;
         const ly = Math.sin(ang) * ring * 0.86;
         ctx.fillStyle = diskFill(Math.min(1, p.heat + 0.2), Math.max(approach, 0.55), 0.55);
         ctx.beginPath();
-        ctx.arc(lx, ly, p.size * 0.7, 0, Math.PI * 2);
+        ctx.arc(lx, ly, p.size * zoom * 0.7, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -129,9 +131,10 @@ export function createBlackHole(world) {
     },
 
     drawGlow(ctx) {
-      const { cx, cy, holeR } = world;
-      const reach = holeR * 7.2;
-      const glow = ctx.createRadialGradient(cx, cy, holeR * 0.7, cx, cy, reach);
+      const { cx, cy, holeR, zoom } = world;
+      const R = holeR * zoom;
+      const reach = Math.max(R * 7.2, Math.hypot(world.w, world.h) * 0.55);
+      const glow = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, reach);
       glow.addColorStop(0, "rgba(255, 196, 110, 0.22)");
       glow.addColorStop(0.12, "rgba(232, 120, 48, 0.14)");
       glow.addColorStop(0.28, "rgba(140, 62, 170, 0.1)");
@@ -149,10 +152,11 @@ export function createBlackHole(world) {
     },
 
     drawCore(ctx, time) {
-      const { cx, cy, holeR, reduced } = world;
+      const { cx, cy, holeR, reduced, zoom } = world;
+      const R = holeR * zoom;
       const shimmer = reduced ? 0 : 0.06 * Math.sin(time * 0.7);
 
-      const well = ctx.createRadialGradient(cx - holeR * 0.12, cy - holeR * 0.08, holeR * 0.15, cx, cy, holeR);
+      const well = ctx.createRadialGradient(cx - R * 0.12, cy - R * 0.08, R * 0.15, cx, cy, R);
       well.addColorStop(0, "#000000");
       well.addColorStop(0.7, "#000000");
       well.addColorStop(0.88, "#0b070f");
@@ -160,27 +164,27 @@ export function createBlackHole(world) {
       well.addColorStop(1, "#000000");
       ctx.fillStyle = well;
       ctx.beginPath();
-      ctx.arc(cx, cy, holeR, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.strokeStyle = `rgba(255, 228, 176, ${0.82 + shimmer})`;
-      ctx.lineWidth = Math.max(1.1, holeR * 0.028);
+      ctx.lineWidth = Math.max(1.1, R * 0.028);
       ctx.beginPath();
-      ctx.arc(cx, cy, holeR * 1.012, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R * 1.012, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.strokeStyle = "rgba(255, 168, 72, 0.35)";
-      ctx.lineWidth = holeR * 0.09;
+      ctx.lineWidth = R * 0.09;
       ctx.beginPath();
-      ctx.arc(cx, cy, holeR * 1.06, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R * 1.06, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.strokeStyle = "rgba(255, 244, 214, 0.55)";
-      ctx.lineWidth = Math.max(1, holeR * 0.02);
+      ctx.lineWidth = Math.max(1, R * 0.02);
       ctx.beginPath();
-      ctx.arc(cx, cy, holeR * 1.012, Math.PI * 0.72, Math.PI * 1.38);
+      ctx.arc(cx, cy, R * 1.012, Math.PI * 0.72, Math.PI * 1.38);
       ctx.stroke();
       ctx.restore();
     },
@@ -192,7 +196,8 @@ export function createBlackHole(world) {
 }
 
 function drawLensedCap(ctx, world, time) {
-  const { cx, cy, holeR, reduced } = world;
+  const { cx, cy, holeR, reduced, zoom } = world;
+  const R = holeR * zoom;
   const pulse = reduced ? 1 : 0.9 + 0.1 * Math.sin(time * 0.9);
   ctx.save();
   ctx.translate(cx, cy);
@@ -200,24 +205,24 @@ function drawLensedCap(ctx, world, time) {
   ctx.rotate(ROLL);
 
   ctx.beginPath();
-  ctx.ellipse(0, -holeR * 0.12, holeR * 1.2, holeR * 0.38, 0, Math.PI * 1.02, Math.PI * 1.98);
+  ctx.ellipse(0, -R * 0.12, R * 1.2, R * 0.38, 0, Math.PI * 1.02, Math.PI * 1.98);
   ctx.strokeStyle = `rgba(255, 210, 140, ${0.42 * pulse})`;
-  ctx.lineWidth = holeR * 0.16;
+  ctx.lineWidth = R * 0.16;
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.ellipse(0, -holeR * 0.02, holeR * 1.08, holeR * 0.3, 0, Math.PI * 1.08, Math.PI * 1.92);
+  ctx.ellipse(0, -R * 0.02, R * 1.08, R * 0.3, 0, Math.PI * 1.08, Math.PI * 1.92);
   ctx.strokeStyle = `rgba(255, 244, 210, ${0.7 * pulse})`;
-  ctx.lineWidth = holeR * 0.045;
+  ctx.lineWidth = R * 0.045;
   ctx.stroke();
 
-  const hot = ctx.createRadialGradient(-holeR * 0.55, -holeR * 0.05, 0, -holeR * 0.2, 0, holeR * 1.4);
+  const hot = ctx.createRadialGradient(-R * 0.55, -R * 0.05, 0, -R * 0.2, 0, R * 1.4);
   hot.addColorStop(0, `rgba(255, 246, 220, ${0.42 * pulse})`);
   hot.addColorStop(0.4, `rgba(255, 160, 70, ${0.16 * pulse})`);
   hot.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = hot;
   ctx.beginPath();
-  ctx.ellipse(0, 0, holeR * 1.35, holeR * 0.42, 0, Math.PI, Math.PI * 2);
+  ctx.ellipse(0, 0, R * 1.35, R * 0.42, 0, Math.PI, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();

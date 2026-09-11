@@ -122,7 +122,8 @@ export function createGlyphs(world) {
 
     drawTrails(ctx) {
       if (world.reduced) return;
-      const { cx, cy } = world;
+      const { cx, cy, zoom } = world;
+      const z = zoom || 1;
       ctx.save();
       ctx.lineWidth = 1;
       ctx.lineJoin = "round";
@@ -130,8 +131,8 @@ export function createGlyphs(world) {
         if (!g.trail || g.trail.length < 2) return;
         ctx.beginPath();
         g.trail.forEach((p, i) => {
-          const x = cx + p.x;
-          const y = cy + p.y;
+          const x = cx + p.x * z;
+          const y = cy + p.y * z;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         });
@@ -142,7 +143,8 @@ export function createGlyphs(world) {
     },
 
     draw(ctx, time, _pointer, side) {
-      const { cx, cy, holeR, reduced } = world;
+      const { cx, cy, holeR, reduced, zoom } = world;
+      const z = zoom || 1;
       ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -152,8 +154,8 @@ export function createGlyphs(world) {
         if (side === "far" && !far) return;
         if (side === "near" && far) return;
 
-        const x = cx + sx;
-        const y = cy + sy;
+        const x = cx + sx * z;
+        const y = cy + sy * z;
         const closeness = Math.max(0, 1 - (g.r - holeR) / (holeR * 5.5));
         const fade = Math.min(1, (g.r - holeR * 1.02) / (holeR * 0.55));
         const twinkle = reduced ? 1 : 0.86 + 0.14 * Math.sin(time * 1.5 + g.phase);
@@ -165,7 +167,7 @@ export function createGlyphs(world) {
         if (alpha < 0.03) return;
 
         if (g.vector && !far && !reduced) {
-          const len = 10 + closeness * 14;
+          const len = (10 + closeness * 14) * z;
           const vx = -Math.sin(g.a) * len;
           const vy = Math.cos(g.a) * FLATTEN * len;
           ctx.strokeStyle = `rgba(143, 212, 255, ${0.28 * fade})`;
@@ -176,7 +178,7 @@ export function createGlyphs(world) {
           ctx.stroke();
         }
 
-        const size = g.size * (0.7 + closeness * 0.55);
+        const size = g.size * z * (0.7 + closeness * 0.55);
         const stretch = 1 + closeness * 1.15;
         ctx.save();
         ctx.translate(x, y);

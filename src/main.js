@@ -53,7 +53,8 @@ function rebuild() {
 }
 
 function drawSelection(ctx) {
-  const { cx, cy, holeR } = world;
+  const { cx, cy, holeR, zoom } = world;
+  const R = holeR * zoom;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(-0.16);
@@ -61,13 +62,13 @@ function drawSelection(ctx) {
   ctx.setLineDash([5, 7]);
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0, 0, holeR * 1.62, holeR * 1.62 * 0.34, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, R * 1.62, R * 1.62 * 0.34, 0, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = "rgba(143, 212, 255, 0.85)";
   ctx.beginPath();
-  ctx.arc(holeR * 1.62, 0, 2.2, 0, Math.PI * 2);
-  ctx.arc(-holeR * 1.62, 0, 2.2, 0, Math.PI * 2);
+  ctx.arc(R * 1.62, 0, 2.2, 0, Math.PI * 2);
+  ctx.arc(-R * 1.62, 0, 2.2, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -80,11 +81,6 @@ function render(now) {
 
   pointer.update();
   ctx.setTransform(world.dpr, 0, 0, world.dpr, 0, 0);
-  ctx.fillStyle = "#030208";
-  ctx.fillRect(0, 0, world.w, world.h);
-  ctx.translate(world.cx, world.cy);
-  ctx.scale(world.zoom, world.zoom);
-  ctx.translate(-world.cx, -world.cy);
 
   stars.draw(ctx, time, pointer.state);
   hole.drawGlow(ctx);
@@ -131,7 +127,7 @@ canvas.addEventListener(
     event.preventDefault();
     if (reduced) return;
     const next = world.zoom * (event.deltaY > 0 ? 0.94 : 1.06);
-    world.zoom = Math.min(2.15, Math.max(0.58, next));
+    world.zoom = Math.min(2.4, Math.max(0.45, next));
   },
   { passive: false },
 );
